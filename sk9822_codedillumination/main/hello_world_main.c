@@ -201,6 +201,7 @@ void staticpattern_dither(uint32_t intensity) {
         //g = 255;
         //b = 0;
         //currentval = 31;
+        // Adjust color here, range 0 - 255
         r = pwmval;
         g = pwmval >> 1;
         b = pwmval >> 2;
