@@ -112,9 +112,9 @@ uint32_t gamma2linear(uint32_t x, uint32_t s) {
     return x*x / s;
 }
 
+/*
 // sig
 // sig_len
-
 static uint32_t get_interpolate(uint32_t t, uint32_t denom) {
     uint32_t y1 = sig[t / denom];
     uint32_t y2 = sig[t / denom + 1];
@@ -123,6 +123,7 @@ static uint32_t get_interpolate(uint32_t t, uint32_t denom) {
     uint32_t y = (y1 * w1 + y2 * w2) / denom; 
     return y;
 }
+*/
 
 //uint32_t curr_intensity;
 uint32_t curr_idx;
