@@ -120,7 +120,7 @@ static uint32_t get_interpolate(uint32_t t, uint32_t denom) {
 
 //uint32_t curr_intensity;
 uint32_t curr_idx;
-uint32_t cooldown;
+//uint32_t cooldown;
 static void periodic_timer_callback(void* arg) {
     /*
     curr_intensity = (curr_intensity + 1) % 16382;
@@ -139,28 +139,31 @@ static void periodic_timer_callback(void* arg) {
     //int32_t bri = curr_intensity * 65535;
     
     //curr_idx = (curr_idx+1) % (sig_len * 16);
-    
+    /*
     if (cooldown > 0) {
         setLED(0);
         cooldown--;
         staticpattern_dither((uint32_t)65535);
         sendSPI();
         return;
-    }
+    }*/
+    
     uint32_t bri;
     curr_idx = curr_idx + 1;
     if (curr_idx >= sig_len * 2) {
-        cooldown = 30 * 16;
+        //cooldown = 30 * 16;
         curr_idx = 0;
-        bri = 0;
-    } else {
-        bri = get_interpolate(curr_idx, 2);
+        //bri = 0;
+    //} else {
+    //    bri = get_interpolate(curr_idx, 2);
     }
+    bri = get_interpolate(curr_idx, 2);
     
     // [Adjust the signal level here!, range 0 to 65535]
     //bri = (bri >> 1) + 32767;
     //bri = (bri >>5) + 16384;
-    bri = (bri>>5) + 4096;
+    //bri = (bri>>5) + 4096;
+    bri = (bri>>3) + 16384;
     //bri = (bri >> 10) + 1024;
     //bri = 1024;
     /*
@@ -172,7 +175,7 @@ static void periodic_timer_callback(void* arg) {
     */
     staticpattern_dither((uint32_t)bri);
     sendSPI();
-    setLED(1);
+    /*setLED(1);*/
 }
 
 void lin2wh_0_65535(uint32_t x, uint32_t* outw8, uint32_t* outh5) {
@@ -202,9 +205,11 @@ void staticpattern_dither(uint32_t intensity) {
         //b = 0;
         //currentval = 31;
         // Adjust color here, range 0 - 255
-        r = pwmval;
-        g = pwmval >> 1;
-        b = pwmval >> 2;
+        r = pwmval * 255 / 255;
+        //g = pwmval >> 1;
+        g = pwmval * 192 / 255;
+        //b = pwmval >> 2;
+        b = pwmval * 127 / 255;
         mydata = r<<24 | g<<16 | b<<8 | 0b11100000 | currentval; // RRGGBB
         data[i] = mydata;
     }

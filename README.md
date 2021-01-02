@@ -8,3 +8,5 @@
 
 # Modify SDK settings (CPU frequency, etc.)
     idf.py menuconfig
+
+# How 
