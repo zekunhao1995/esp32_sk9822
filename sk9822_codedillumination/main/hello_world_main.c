@@ -44,6 +44,10 @@ void staticpattern_dither(uint32_t intensity);
 static void periodic_timer_callback(void* arg);
 uint32_t data[256];
 
+int gains[3] = {255, 192, 127};
+int mod_depth = 3;
+int mod_mean = 16384;
+
 void app_main(void)
 {
     printf("Hello world!\n");
@@ -67,6 +71,8 @@ void app_main(void)
     setupGPIO();
     
     printf("portTICK_PERIOD_MS: \t[%d]\n", portTICK_PERIOD_MS);
+    
+    printf("Supported commands: rxxx, gxxx, bxxx, dxxx, mxxx\n\{r,g,b\}xxx: Adjust RGB components (0-255, default 255, 192, 127)\ndxxx: Adjust modulation depth (0-8, higher, the shallower, default 3)\nmxxx: Adjust mean brightness (0-65535, default 16384)\n");
     
     // Generate test pattern
     //for (int i=0; i<sig_len; i++) {
@@ -108,11 +114,33 @@ void app_main(void)
                 if (line[i] == '\n' || line[i] == '\r') {
                     cmdbuf[cmdbuf_ptr] = '\0';
                     fputs(cmdbuf, stdout);
-                    fputs(".", stdout);
+                    fputs("\n", stdout);
+                    int arg = atoi(&cmdbuf[1]);
+                    switch(cmdbuf[0]) {
+                        case 'r':
+                            gains[0] = arg;
+                            break;
+                        case 'g':
+                            gains[1] = arg;
+                            break;
+                        case 'b':
+                            gains[2] = arg;
+                            break;
+                        case 'd':
+                            mod_depth = arg;
+                            break;
+                        case 'm':
+                            mod_mean = arg;
+                            break;
+                        default:
+                            fputs("Nope", stdout);
+                            break;
+                    }
                     cmdbuf_ptr = 0;
+                } else {
+                    cmdbuf[cmdbuf_ptr] = line[i];
+                    cmdbuf_ptr++;
                 }
-                cmdbuf[cmdbuf_ptr] = line[i];
-                cmdbuf_ptr++;
                 i++;
             }
             //cmdbuf[cmdbuf_ptr]
@@ -210,7 +238,8 @@ static void periodic_timer_callback(void* arg) {
     //bri = (bri >> 1) + 32767;
     //bri = (bri >>5) + 16384;
     //bri = (bri>>5) + 4096;
-    bri = (bri>>3) + 16384;
+    //bri = (bri>>3) + 16384;
+    bri = (bri>>mod_depth) + mod_mean;
     //bri = (bri >> 10) + 1024;
     //bri = 1024;
     /*
@@ -252,11 +281,11 @@ void staticpattern_dither(uint32_t intensity) {
         //b = 0;
         //currentval = 31;
         // Adjust color here, range 0 - 255
-        r = pwmval * 255 / 255;
+        r = pwmval * gains[0] / 255;
         //g = pwmval >> 1;
-        g = pwmval * 192 / 255;
+        g = pwmval * gains[1] / 255;
         //b = pwmval >> 2;
-        b = pwmval * 127 / 255;
+        b = pwmval * gains[2] / 255;
         mydata = r<<24 | g<<16 | b<<8 | 0b11100000 | currentval; // RRGGBB
         data[i] = mydata;
     }
@@ -312,7 +341,8 @@ void setLED(int i)
 #define maxSPIFrameInBytes 4096 // 409x
 //#define maxSPIFrequency (20*1000*1000)
 //#define maxSPIFrequency (16*1000*1000)
-#define maxSPIFrequency (12*1000*1000)
+//#define maxSPIFrequency (12*1000*1000)
+#define maxSPIFrequency (8*1000*1000)
 int setupSPI()
 {
     esp_err_t ret;
