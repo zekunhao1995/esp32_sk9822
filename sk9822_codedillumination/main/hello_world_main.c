@@ -19,6 +19,10 @@
 #include "esp_timer.h"
 #include "signal.h"
 
+#include "driver/uart.h"
+#include "esp_vfs.h"
+#include "esp_vfs_dev.h"
+
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define CHIP_NAME "ESP32"
 #endif
@@ -83,8 +87,51 @@ void app_main(void)
     //ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 8333)); // 120.005Hz sample rate
     //ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 4167)); // 240.005Hz sample rate
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 2083)); // 480.005Hz sample rate
+    
+    /* Disable buffering on stdin */
+    //ESP_ERROR_CHECK( uart_driver_install(CONFIG_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0) );
+    //esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+    setvbuf(stdin, NULL, _IONBF, 0);
+    char line[128];
+    char cmdbuf[128];
+    int cmdbuf_ptr = 0;
     while (1) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        //vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        if( fgets (line, 128, stdin)!=NULL ) {
+            /* writing content to stdout */
+            //glob_brightness = atoi(line);
+            //fputs(line, stdout);
+            //fputs(".", stdout);
+            int i = 0;
+            while(line[i] != '\0') {
+                if (line[i] == '\n' || line[i] == '\r') {
+                    cmdbuf[cmdbuf_ptr] = '\0';
+                    fputs(cmdbuf, stdout);
+                    fputs(".", stdout);
+                    cmdbuf_ptr = 0;
+                }
+                cmdbuf[cmdbuf_ptr] = line[i];
+                cmdbuf_ptr++;
+                i++;
+            }
+            //cmdbuf[cmdbuf_ptr]
+            /*
+            char* p = line;
+            uint32_t irgb[4];
+            for (int i=0; i<4; i++) {
+                irgb[i] = 0;
+                while (*p >= '0' && *p <= '9') {
+                    irgb[i] = irgb[i]*10 + (*p - '0');
+                    p++;
+                }
+                while (*p != '\n' && (*p < '0' || *p > '9')) {
+                    p++;
+                }
+            }
+            staticpattern(irgb[0], irgb[1], irgb[2], irgb[3]);
+            sendSPI();*/
+        }
     }
     
     for (int i = 10; i >= 0; i--) {
@@ -264,7 +311,8 @@ void setLED(int i)
 #define PIN_NUM_CLK 14
 #define maxSPIFrameInBytes 4096 // 409x
 //#define maxSPIFrequency (20*1000*1000)
-#define maxSPIFrequency (16*1000*1000)
+//#define maxSPIFrequency (16*1000*1000)
+#define maxSPIFrequency (12*1000*1000)
 int setupSPI()
 {
     esp_err_t ret;
