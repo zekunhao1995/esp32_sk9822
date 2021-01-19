@@ -48,7 +48,7 @@ void staticpattern_dither(uint32_t intensity);
 static void periodic_timer_callback(void* arg);
 uint32_t data[256];
 
-int gains[3] = {255, 192, 127};
+int gains[3] = {275, 160, 160};
 int mod_depth = 3;
 int mod_mean = 16384;
 
@@ -78,7 +78,7 @@ void app_main(void)
     
     printf("portTICK_PERIOD_MS: \t[%d]\n", portTICK_PERIOD_MS);
     
-    printf("Supported commands: rxxx, gxxx, bxxx, dxxx, mxxx\n{r,g,b}xxx: Adjust RGB components (0-255, default 255, 192, 127)\ndxxx: Adjust modulation depth (0-8, higher, the shallower, default 3)\nmxxx: Adjust mean brightness (0-65535, default 16384)\n");
+    printf("Supported commands: rxxx, gxxx, bxxx, dxxx, mxxx\n{r,g,b}xxx: Adjust RGB components (0-255, default 255, 192, 127, red can go up to 280)\ndxxx: Adjust modulation depth (0-8, higher, the shallower, default 3)\nmxxx: Adjust mean brightness (0-65535, default 16384)\n");
     
     // Generate test pattern
     //for (int i=0; i<sig_len; i++) {
@@ -212,7 +212,7 @@ ledc_channel_config_t ledc_channel[3] = {
 static void setupPWM() {
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_10_BIT, // resolution of PWM duty
-        .freq_hz = 36000,                      // frequency of PWM signal
+        .freq_hz = 33000,                      // frequency of PWM signal
         .speed_mode = LEDC_HIGH_SPEED_MODE,           // timer mode
         .timer_num = LEDC_TIMER_0,            // timer index
         .clk_cfg = LEDC_AUTO_CLK,              // Auto select the source clock
@@ -225,11 +225,11 @@ static void setupPWM() {
         ledc_channel_config(&ledc_channel[ch]);
     }
 }
-
+#define MIN(a,b) (((a)<(b))?(a):(b))
 static void IRAM_ATTR set_pwm(int32_t x) {
     //x = x >> 6;
     int rgb[3];
-    rgb[0] = ((x * 2 * (gains[0]&0xFF) / 3) / 256) >> 6;
+    rgb[0] = ((x * 2 * (MIN(gains[0], 280)) / 3) / 256 + 2048)>> 6;
     rgb[1] = (x * gains[1] / 256) >> 6;
     rgb[2] = (x * gains[2] / 256) >> 6;
     for(int ch=0; ch<3; ch++) {
@@ -249,7 +249,6 @@ static uint32_t get_interpolate(uint32_t t, uint32_t denom) {
 
 uint32_t curr_idx;
 static void IRAM_ATTR periodic_timer_callback(void* arg) {
-    /*
     uint32_t bri;
     curr_idx = curr_idx + 1;
     if (curr_idx >= sig_len * 2) {
@@ -265,14 +264,15 @@ static void IRAM_ATTR periodic_timer_callback(void* arg) {
     bri = (bri>>mod_depth) + mod_mean;
     //bri = (bri >> 10) + 1024;
     //bri = 1024;
-    */
+    
+    /*
     curr_idx = (curr_idx + 1) % 256;
     float x = sinf(curr_idx * 2 * (float)M_PI / 256.0f);
     x = (x + 1.0f) * 0.5f;
     x = x * x;
     int32_t bri = (int32_t)(x * 65535.0f);
     //if (bri < 0) bri = 0;
-    
+    */
     
     //staticpattern_dither((uint32_t)bri);
     //sendSPI();
